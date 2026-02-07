@@ -569,6 +569,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                       setConfirmDeleteTransaction={setConfirmDeleteTransaction}
                       getCardVendor={getCardVendor}
                       getCardNickname={getCardNickname}
+                      getTranslatedName={getTranslatedName}
                       isWidget={disableWrapper}
                       hideActions={hideActions}
                       hideInstallmentsColumn={hideInstallmentsColumn}
@@ -599,6 +600,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                   setConfirmDeleteTransaction={setConfirmDeleteTransaction}
                   getCardVendor={getCardVendor}
                   getCardNickname={getCardNickname}
+                  getTranslatedName={getTranslatedName}
                   isWidget={disableWrapper}
                   hideActions={hideActions}
                   hideInstallmentsColumn={hideInstallmentsColumn}
@@ -707,6 +709,7 @@ interface TransactionRowProps {
   setConfirmDeleteTransaction: (t: Transaction) => void;
   getCardVendor: (accountNumber: string | undefined | null) => string | null;
   getCardNickname: (accountNumber: string | undefined | null) => string | null | undefined;
+  getTranslatedName: (transaction: Transaction) => string;
   isWidget?: boolean;
   hideActions?: boolean;
   hideInstallmentsColumn?: boolean;
@@ -732,6 +735,7 @@ const TransactionRow = React.memo(({
   setConfirmDeleteTransaction,
   getCardVendor,
   getCardNickname,
+  getTranslatedName,
   isWidget,
   hideActions,
   hideInstallmentsColumn,
