@@ -16,7 +16,8 @@ import {
   Select,
   MenuItem,
   Chip,
-  Autocomplete
+  Autocomplete,
+  LinearProgress
 } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -34,8 +35,10 @@ import ImageIcon from '@mui/icons-material/Image';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import TranslateIcon from '@mui/icons-material/Translate';
 import { msToSeconds, secondsToMs } from '../utils/settings-utils';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
+import { useLanguage, getLanguageName, getLanguageFlag } from '../context/LanguageContext';
 
 interface SettingsModalProps {
   open: boolean;
@@ -202,6 +205,7 @@ const StyledSelect = styled(Select)(({ theme }) => ({
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   const theme = useTheme();
+  const { language, setLanguage } = useLanguage();
   const [settings, setSettings] = useState<Settings>({
     sync_enabled: false,
     sync_hour: 3,
@@ -231,6 +235,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   // WhatsApp test state
   const [testingWhatsApp, setTestingWhatsApp] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<{ status: string, qr: string | null }>({ status: 'DISCONNECTED', qr: null });
+
+  // Translation state
+  const [translationStats, setTranslationStats] = useState<{
+    total: number;
+    translated: number;
+    pending: number;
+    errors: number;
+    uniquePending: number;
+    percentageTranslated: number;
+  } | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const [translationProgress, setTranslationProgress] = useState<string>('');
 
   // Fetch WhatsApp status once when modal opens (no continuous polling)
   useEffect(() => {
@@ -297,6 +313,53 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
     }
   };
 
+  // Handle translation
+  const handleStartTranslation = async () => {
+    try {
+      setTranslating(true);
+      setTranslationProgress('Starting translation process...');
+
+      const response = await fetch('/api/translations/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          batchSize: 20,
+          limit: null,
+          forceRetranslate: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Translation failed');
+      }
+
+      const result = await response.json();
+
+      setTranslationProgress(
+        `Translation complete! Translated: ${result.stats.successfullyTranslated}, Errors: ${result.stats.errors}`
+      );
+
+      // Refresh translation stats
+      const statsResponse = await fetch('/api/translations/translate');
+      if (statsResponse.ok) {
+        const data = await statsResponse.json();
+        setTranslationStats(data);
+      }
+
+      setResult({
+        type: 'success',
+        message: `Successfully translated ${result.stats.successfullyTranslated} transactions!`
+      });
+
+    } catch (error) {
+      logger.error('Translation failed', error as Error);
+      setResult({ type: 'error', message: 'Translation failed. Check console for details.' });
+      setTranslationProgress('Translation failed');
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const [whatsappTestResult, setWhatsappTestResult] = useState<{
     success: boolean;
     message: string | null;
@@ -355,6 +418,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
       fetchSettings();
     }
   }, [open, fetchSettings]);
+
+  // Fetch translation statistics when modal opens
+  useEffect(() => {
+    const fetchTranslationStats = async () => {
+      if (!open) return;
+
+      try {
+        const response = await fetch('/api/translations/translate');
+        if (response.ok) {
+          const data = await response.json();
+          setTranslationStats(data);
+        }
+      } catch (error) {
+        logger.error('Failed to fetch translation stats', error as Error);
+      }
+    };
+
+    if (open) {
+      fetchTranslationStats();
+    }
+  }, [open]);
 
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
@@ -815,6 +899,109 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
                   <MenuItem value="gemini-3-pro-preview">Gemini 3 Pro (Limited)</MenuItem>
                 </StyledSelect>
               </SettingRow>
+            </SettingSection>
+
+            {/* Translation Settings */}
+            <SettingSection>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <TranslateIcon sx={{ color: '#8b5cf6' }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Translation Settings
+                </Typography>
+              </Box>
+
+              <SettingRow>
+                <Box sx={{ flex: 1, mr: 2 }}>
+                  <Typography variant="body1">Display Language</Typography>
+                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                    Choose language for transaction names
+                  </Typography>
+                </Box>
+                <StyledSelect
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as 'he' | 'en' | 'ru')}
+                  size="small"
+                  sx={{ width: 250 }}
+                >
+                  <MenuItem value="he">{getLanguageFlag('he')} {getLanguageName('he')} (Hebrew - Original)</MenuItem>
+                  <MenuItem value="en">{getLanguageFlag('en')} {getLanguageName('en')} (English)</MenuItem>
+                  <MenuItem value="ru">{getLanguageFlag('ru')} {getLanguageName('ru')} (Russian)</MenuItem>
+                </StyledSelect>
+              </SettingRow>
+
+              {/* Translation Statistics */}
+              {translationStats && (
+                <Box sx={{ mt: 2, p: 2, bgcolor: theme.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)', borderRadius: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Translation Status
+                  </Typography>
+                  <Box sx={{ mb: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                        {translationStats.translated} / {translationStats.total} transactions translated
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#8b5cf6' }}>
+                        {translationStats.percentageTranslated}%
+                      </Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={translationStats.percentageTranslated}
+                      sx={{
+                        height: 6,
+                        borderRadius: 3,
+                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: '#8b5cf6',
+                          borderRadius: 3,
+                        }
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                      ⏳ Pending: {translationStats.uniquePending} unique names
+                    </Typography>
+                    {translationStats.errors > 0 && (
+                      <Typography variant="caption" sx={{ color: '#ef4444' }}>
+                        ⚠️ Errors: {translationStats.errors}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Translation Action */}
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={translating ? <CircularProgress size={16} color="inherit" /> : <TranslateIcon />}
+                  disabled={translating || !settings.gemini_api_key}
+                  onClick={handleStartTranslation}
+                  sx={{
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+                    },
+                    '&:disabled': {
+                      background: 'rgba(139, 92, 246, 0.3)',
+                    }
+                  }}
+                >
+                  {translating ? 'Translating...' : 'Translate All Transactions'}
+                </Button>
+                {!settings.gemini_api_key && (
+                  <Typography variant="caption" sx={{ color: '#ef4444', display: 'block', mt: 1 }}>
+                    ⚠️ Please configure Gemini API Key first
+                  </Typography>
+                )}
+                {translationProgress && (
+                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mt: 1 }}>
+                    {translationProgress}
+                  </Typography>
+                )}
+              </Box>
             </SettingSection>
 
             {/* WhatsApp Daily Summary */}

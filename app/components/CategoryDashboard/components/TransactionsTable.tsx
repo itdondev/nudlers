@@ -16,9 +16,13 @@ import DeleteConfirmationDialog from '../../DeleteConfirmationDialog';
 import CategoryAutocomplete from '../../CategoryAutocomplete';
 import AccountDisplay from '../../AccountDisplay';
 import MobileSortableTable, { SortOption } from '../../MobileSortableTable';
+import { useLanguage } from '../../../context/LanguageContext';
 
 export interface Transaction {
   name: string;
+  name_en?: string;
+  name_ru?: string;
+  name_original?: string;
   price: number;
   date: string;
   category: string;
@@ -65,6 +69,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { getTranslatedName } = useLanguage();
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
   const [editPrice, setEditPrice] = React.useState<string>('');
   const [editCategory, setEditCategory] = React.useState<string>('');
@@ -755,8 +760,8 @@ const TransactionRow = React.memo(({
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis'
-      }} title={transaction.name}>
-        {transaction.name}
+      }} title={getTranslatedName(transaction)}>
+        {getTranslatedName(transaction)}
       </TableCell>
       <TableCell style={cellStyle}>
         {editingTransaction?.identifier === transaction.identifier && !hideActions ? (
@@ -1034,7 +1039,7 @@ const TransactionMobileCardContent = ({
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, flex: 1, mr: 1 }}>
-          {transaction.name}
+          {getTranslatedName(transaction)}
           {showDate && (
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 500, mt: 0.5 }}>
               {dateUtils.formatDate(transaction.date)}

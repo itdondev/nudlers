@@ -271,11 +271,14 @@ const getTransactions = createApiHandler({
 
         return {
             sql: `
-        SELECT 
+        SELECT
           t.identifier,
           t.vendor,
           t.date,
           t.name,
+          t.name_en,
+          t.name_ru,
+          t.name_original,
           t.price,
           t.category,
           t.type,

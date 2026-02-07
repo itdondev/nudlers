@@ -8,6 +8,7 @@ Nudlers is a personal finance management application built with Next.js that agg
 
 ### Core Features
 - **Transaction Scraping**: Automated fetching from Israeli banks (Hapoalim, Leumi, Discount, etc.) and credit card providers (Visa Cal, Max, Isracard, Amex)
+- **Multi-Language Translation**: AI-powered translation of Hebrew transaction names to English and Russian using Gemini 2.5 Flash
 - **Category Management**: Auto-categorization with rules and manual override
 - **Budget Tracking**: Monthly budgets with category-level tracking
 - **WhatsApp Notifications**: Daily/weekly summary reports via WhatsApp
@@ -294,9 +295,11 @@ LOG_LEVEL=info        # Logging level
 | `app/pages/api/db.js` | PostgreSQL connection pool |
 | `app/config/resource-config.js` | Resource optimization settings |
 | `app/utils/constants.js` | Vendor lists, settings keys, timeouts |
+| `app/utils/translator.js` | Translation utilities using Gemini AI |
 | `app/scrapers/core.js` | Shared scraper utilities and anti-detection |
 | `app/components/Layout.tsx` | Main app layout with view routing |
 | `app/context/ThemeContext.tsx` | Theme provider |
+| `app/context/LanguageContext.tsx` | Language preference provider |
 | `app/styles/design-tokens.css` | CSS custom properties |
 | `app/styles/theme.ts` | MUI theme configuration |
 
@@ -363,6 +366,202 @@ export const Default: Story = {
     },
 };
 ```
+
+## Translation System
+
+### Overview
+
+The app includes an AI-powered translation system that translates Hebrew transaction names from Israeli banks into English and Russian using Gemini 2.5 Flash. This allows users to view their transactions in their preferred language.
+
+### Database Schema
+
+Transaction translations are stored in the `transactions` table:
+
+```sql
+-- Translation fields
+name_original VARCHAR(100)  -- Original Hebrew name from bank
+name_en VARCHAR(100)        -- English translation
+name_ru VARCHAR(100)        -- Russian translation
+translation_status VARCHAR(20) -- Status: pending, translated, error
+
+-- Indexes for performance
+CREATE INDEX idx_transactions_name_en ON transactions(name_en);
+CREATE INDEX idx_transactions_name_ru ON transactions(name_ru);
+CREATE INDEX idx_transactions_translation_status ON transactions(translation_status);
+```
+
+### Language Preference
+
+User language preference is stored in `app_settings`:
+
+```sql
+-- Language setting
+INSERT INTO app_settings (key, value, description)
+VALUES ('display_language', '"he"', 'Display language: he (Hebrew), en (English), ru (Russian)');
+```
+
+### Key Components
+
+#### 1. Translation Utility (`app/utils/translator.js`)
+
+Core translation logic using Gemini AI:
+
+```javascript
+import { translateBatch, translateAllTransactions, getTranslatedName } from '../utils/translator.js';
+
+// Translate a batch of Hebrew names
+const translations = await translateBatch(['חנות אלקטרוניקה', 'סופר פארם'], apiKey);
+// Returns: { 'חנות אלקטרוניקה': { en: 'Electronics Store', ru: 'Магазин электроники' } }
+
+// Translate all untranslated transactions
+const stats = await translateAllTransactions({
+    batchSize: 20,      // Process 20 names at once
+    limit: null,        // No limit (translate all)
+    forceRetranslate: false  // Skip already translated
+});
+```
+
+#### 2. Language Context (`app/context/LanguageContext.tsx`)
+
+React context for managing display language:
+
+```tsx
+import { useLanguage } from '../context/LanguageContext';
+
+const MyComponent = () => {
+    const { language, setLanguage, getTranslatedName } = useLanguage();
+
+    // Get translated name based on current language
+    const displayName = getTranslatedName(transaction);
+    // language='en' → returns transaction.name_en
+    // language='ru' → returns transaction.name_ru
+    // language='he' → returns transaction.name_original
+
+    // Change language
+    await setLanguage('ru'); // Updates DB and state
+};
+```
+
+#### 3. API Endpoints
+
+**Translation Management**
+
+```bash
+# Get translation statistics
+GET /api/translations/translate
+Response: {
+    total: 1000,
+    translated: 850,
+    pending: 150,
+    errors: 0,
+    uniquePending: 45,
+    percentageTranslated: 85
+}
+
+# Start translation process
+POST /api/translations/translate
+Body: {
+    batchSize: 20,
+    limit: null,
+    forceRetranslate: false
+}
+Response: {
+    success: true,
+    stats: {
+        totalProcessed: 45,
+        successfullyTranslated: 45,
+        errors: 0,
+        batches: 3
+    }
+}
+```
+
+**Language Preference**
+
+```bash
+# Get current language
+GET /api/translations/language
+Response: { language: 'en' }
+
+# Set language
+POST /api/translations/language
+Body: { language: 'ru' }
+Response: { success: true, language: 'ru' }
+```
+
+### Usage in Components
+
+All components that display transaction names should use `useLanguage`:
+
+```tsx
+import { useLanguage } from '../context/LanguageContext';
+
+interface Transaction {
+    name: string;           // Original field (Hebrew)
+    name_en?: string;       // English translation
+    name_ru?: string;       // Russian translation
+    name_original?: string; // Preserved original
+}
+
+const TransactionDisplay = ({ transaction }: { transaction: Transaction }) => {
+    const { getTranslatedName } = useLanguage();
+
+    return (
+        <div>
+            {getTranslatedName(transaction)}
+        </div>
+    );
+};
+```
+
+### Translation Process
+
+1. **User triggers translation** (Settings → Translation → "Translate All Transactions")
+2. **System fetches unique Hebrew names** from transactions table
+3. **Batch translation via Gemini**:
+   - Groups names in batches of 20
+   - Sends to Gemini 2.5 Flash with specialized prompt
+   - Receives JSON with English and Russian translations
+4. **Updates database**:
+   - Saves `name_en` and `name_ru`
+   - Sets `translation_status = 'translated'`
+   - Preserves original in `name_original`
+5. **UI updates automatically** via LanguageContext
+
+### Migration
+
+Migration `007_add_translation_fields.sql` adds translation support to existing installations:
+
+```bash
+cd app
+npm run migrate  # Applies migration automatically
+```
+
+### Cost Estimation
+
+Gemini 2.5 Flash pricing (as of 2025):
+- ~$0.0001 per transaction translation
+- 1,000 transactions ≈ $0.10 USD
+- Practically free for personal use
+
+### Important Files
+
+| File | Purpose |
+|------|---------|
+| `app/utils/translator.js` | Translation logic and batch processing |
+| `app/context/LanguageContext.tsx` | React context for language management |
+| `app/pages/api/translations/translate.js` | Translation API endpoint |
+| `app/pages/api/translations/language.js` | Language preference API |
+| `app/migrations/007_add_translation_fields.sql` | Database migration |
+| `app/components/SettingsModal.tsx` | Translation settings UI |
+
+### Best Practices
+
+1. **Always use `getTranslatedName()`** instead of accessing `transaction.name` directly
+2. **Preserve original Hebrew** in `name_original` field
+3. **Batch translations** to minimize API costs and time
+4. **Handle missing translations gracefully** - fall back to original if translation unavailable
+5. **Update API endpoints** to return all translation fields (`name`, `name_en`, `name_ru`, `name_original`)
 
 ## Contributing Guidelines
 
