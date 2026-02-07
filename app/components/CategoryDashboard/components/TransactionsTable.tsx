@@ -393,6 +393,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                 onDelete={() => setConfirmDeleteTransaction(transaction)}
                 getCardVendor={getCardVendor}
                 getCardNickname={getCardNickname}
+                getTranslatedName={getTranslatedName}
                 showDate={!groupByDate}
                 isEditing={editingTransaction?.identifier === transaction.identifier}
                 editCategory={editCategory}
@@ -434,6 +435,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                         onDelete={() => setConfirmDeleteTransaction(transaction)}
                         getCardVendor={getCardVendor}
                         getCardNickname={getCardNickname}
+                        getTranslatedName={getTranslatedName}
                         showDate={false}
                         isEditing={editingTransaction?.identifier === transaction.identifier}
                         editCategory={editCategory}
@@ -460,6 +462,7 @@ const TransactionsTable: React.FC<TransactionsTableProps> = ({
                   onDelete={() => setConfirmDeleteTransaction(transaction)}
                   getCardVendor={getCardVendor}
                   getCardNickname={getCardNickname}
+                  getTranslatedName={getTranslatedName}
                   showDate={true}
                   isEditing={editingTransaction?.identifier === transaction.identifier}
                   editCategory={editCategory}
@@ -995,6 +998,7 @@ interface TransactionMobileCardProps {
   onDelete: () => void;
   getCardVendor: (accountNumber: string | undefined | null) => string | null;
   getCardNickname: (accountNumber: string | undefined | null) => string | null | undefined;
+  getTranslatedName: (transaction: Transaction) => string;
   showDate?: boolean;
   isEditing?: boolean;
   editCategory?: string;
@@ -1016,6 +1020,7 @@ const TransactionMobileCardContent = ({
   onDelete,
   getCardVendor,
   getCardNickname,
+  getTranslatedName,
   showDate,
   isEditing,
   editCategory,
@@ -1167,6 +1172,7 @@ const TransactionMobileCard = ({
   onDelete,
   getCardVendor,
   getCardNickname,
+  getTranslatedName,
   showDate,
   isEditing,
   editCategory,
@@ -1211,6 +1217,7 @@ const TransactionMobileCard = ({
         onDelete={onDelete}
         getCardVendor={getCardVendor}
         getCardNickname={getCardNickname}
+        getTranslatedName={getTranslatedName}
         showDate={showDate}
         isEditing={isEditing}
         editCategory={editCategory}
