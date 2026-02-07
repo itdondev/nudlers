@@ -33,6 +33,7 @@ import ExpensesModal from './CategoryDashboard/components/ExpensesModal';
 import { ModalData } from './CategoryDashboard/types';
 import { useCategories } from './CategoryDashboard/utils/useCategories';
 import { useDateSelection, DateRangeMode } from '../context/DateSelectionContext';
+import { useLanguage } from '../context/LanguageContext';
 import { logger } from '../utils/client-logger';
 import { getTableHeaderCellStyle, getTableBodyCellStyle, TABLE_ROW_HOVER_STYLE, getTableRowHoverBackground } from './CategoryDashboard/utils/tableStyles';
 import MobileSortableTable, { SortOption } from './MobileSortableTable';
@@ -45,6 +46,9 @@ interface MonthlySummaryData {
     vendor?: string;
     vendor_nickname?: string | null;
     description?: string;
+    name_original?: string | null;
+    name_en?: string | null;
+    name_ru?: string | null;
     category?: string;
     last4digits?: string;
     transaction_count?: number;
@@ -61,9 +65,17 @@ const formatNumber = (num: number): string => {
     return new Intl.NumberFormat('he-IL').format(Math.round(num));
 };
 
+const breakdownRowToTransaction = (row: MonthlySummaryData) => ({
+    name: row.description,
+    name_original: row.name_original,
+    name_en: row.name_en,
+    name_ru: row.name_ru
+});
+
 const BreakdownView: React.FC = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const { getTranslatedName } = useLanguage();
 
     const [data, setData] = useState<MonthlySummaryData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -454,6 +466,8 @@ const BreakdownView: React.FC = () => {
                                         <BreakdownMobileCardContent
                                             row={row}
                                             theme={theme}
+                                            getTranslatedName={getTranslatedName}
+                                            breakdownRowToTransaction={breakdownRowToTransaction}
                                             loadingDescription={loadingDescription}
                                             handleDescriptionClick={handleDescriptionClick}
                                             editingDescription={editingDescription}
@@ -592,7 +606,7 @@ const BreakdownView: React.FC = () => {
                                                             <DescriptionIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                                                         )}
                                                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                            {row.description}
+                                                            {getTranslatedName(breakdownRowToTransaction(row))}
                                                         </Typography>
                                                     </Box>
                                                 </TableCell>
@@ -720,6 +734,8 @@ const BreakdownView: React.FC = () => {
 interface BreakdownMobileCardProps {
     row: MonthlySummaryData;
     theme: any;
+    getTranslatedName: (tx: { name?: string; name_original?: string | null; name_en?: string | null; name_ru?: string | null }) => string;
+    breakdownRowToTransaction: (row: MonthlySummaryData) => { name?: string; name_original?: string | null; name_en?: string | null; name_ru?: string | null };
     loadingDescription: string | null;
     handleDescriptionClick: (description: string) => void;
     editingDescription: string | null;
@@ -735,6 +751,8 @@ interface BreakdownMobileCardProps {
 const BreakdownMobileCardContent = ({
     row,
     theme,
+    getTranslatedName,
+    breakdownRowToTransaction,
     loadingDescription,
     handleDescriptionClick,
     editingDescription,
@@ -755,7 +773,7 @@ const BreakdownMobileCardContent = ({
                         <DescriptionIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                     )}
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {row.description}
+                        {getTranslatedName(breakdownRowToTransaction(row))}
                     </Typography>
                 </Box>
                 <Typography
@@ -818,6 +836,8 @@ const BreakdownMobileCardContent = ({
 const BreakdownMobileCard = ({
     row,
     theme,
+    getTranslatedName,
+    breakdownRowToTransaction,
     loadingDescription,
     handleDescriptionClick,
     editingDescription,
@@ -851,7 +871,7 @@ const BreakdownMobileCard = ({
                         <DescriptionIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                     )}
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {row.description}
+                        {getTranslatedName(breakdownRowToTransaction(row))}
                     </Typography>
                 </Box>
                 <Typography

@@ -31,6 +31,7 @@ import { useCategories } from '../utils/useCategories';
 import { useCardVendors } from '../utils/useCardVendors';
 import { CardVendorIcon } from '../../CardVendorsModal';
 import DeleteConfirmationDialog from '../../DeleteConfirmationDialog';
+import { useLanguage } from '../../../context/LanguageContext';
 
 type SortField = 'date' | 'processed_date' | 'price' | 'installments_number' | 'name' | 'category' | 'card';
 type SortDirection = 'asc' | 'desc';
@@ -40,6 +41,7 @@ type SortDirection = 'asc' | 'desc';
 const ExpensesModal: React.FC<ExpensesModalProps> = ({ open, onClose, data, color, setModalData, currentMonth }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { getTranslatedName } = useLanguage();
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
   const [editPrice, setEditPrice] = React.useState<string>('');
   const [editCategory, setEditCategory] = React.useState<string>('');
@@ -406,7 +408,7 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({ open, onClose, data, colo
                   label: 'Description',
                   minWidth: 200,
                   sortable: true,
-                  format: (val) => val
+                  format: (_, expense) => getTranslatedName(expense)
                 },
                 {
                   id: 'category',
@@ -667,7 +669,7 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({ open, onClose, data, colo
                     );
                   }
                 }
-              ], [editingExpense, editCategory, editPrice, applyToAll, isBankView, availableCategories, theme, color])}
+              ], [editingExpense, editCategory, editPrice, applyToAll, isBankView, availableCategories, theme, color, getTranslatedName])}
               mobileCardRenderer={(expense) => {
                 const isEditing = editingExpense?.identifier === expense.identifier && editingExpense?.vendor === expense.vendor;
 
@@ -675,7 +677,7 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({ open, onClose, data, colo
                   return (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', p: 1 }}>
                       <Typography variant="subtitle2" fontWeight={700} sx={{ color: theme.palette.text.primary }}>
-                        {expense.name}
+                        {getTranslatedName(expense)}
                       </Typography>
 
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -777,7 +779,7 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({ open, onClose, data, colo
                 return (
                   <Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="subtitle2" fontWeight={700}>{expense.name}</Typography>
+                      <Typography variant="subtitle2" fontWeight={700}>{getTranslatedName(expense)}</Typography>
                       <Typography variant="subtitle2" fontWeight={700} color={expense.price >= 0 ? 'success.main' : 'error.main'}>
                         {isBankView ? (expense.price >= 0 ? '+' : '') : (expense.price < 0 ? '-' : '')}₪{formatNumber(Math.abs(expense.price))}
                       </Typography>

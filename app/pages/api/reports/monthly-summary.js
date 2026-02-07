@@ -118,6 +118,9 @@ const handler = createApiHandler({
       sql = `
         SELECT 
           TRIM(t.name) as description,
+          MAX(t.name_original) as name_original,
+          MAX(t.name_en) as name_en,
+          MAX(t.name_ru) as name_ru,
           MAX(t.category) as category,
           COUNT(DISTINCT (t.identifier, t.vendor)) as transaction_count,
           COALESCE(SUM(t.price), 0)::numeric as amount,

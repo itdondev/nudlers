@@ -84,7 +84,7 @@ export default async function handler(req, res) {
       const installmentsResult = await client.query(`
         WITH installments_with_origin AS (
           SELECT
-            t.name, t.price, t.original_amount, t.original_currency,
+            t.name, t.name_original, t.name_en, t.name_ru, t.price, t.original_amount, t.original_currency,
             t.category, t.vendor, t.account_number, t.transaction_type,
             t.installments_number, t.installments_total,
             t.date, t.processed_date,
@@ -117,7 +117,7 @@ export default async function handler(req, res) {
         ),
         final_installments AS (
           SELECT
-            name, price, original_amount, original_currency,
+            name, name_original, name_en, name_ru, price, original_amount, original_currency,
             category, vendor, account_number, transaction_type,
             installments_number as current_installment,
             installments_total as total_installments,
@@ -135,7 +135,7 @@ export default async function handler(req, res) {
           WHERE rn = 1
         )
         SELECT
-          l.name, l.price, l.original_amount, l.original_currency,
+          l.name, l.name_original, l.name_en, l.name_ru, l.price, l.original_amount, l.original_currency,
           l.category, l.vendor, l.account_number, l.transaction_type,
           l.current_installment, l.total_installments,
           l.last_charge_date, l.last_billing_date,
@@ -178,7 +178,7 @@ export default async function handler(req, res) {
           FROM non_recurring_exclusions
         )
         SELECT
-          t.name, t.price, t.category, t.vendor, t.account_number, t.date, t.processed_date, t.transaction_type,
+          t.name, t.name_original, t.name_en, t.name_ru, t.price, t.category, t.vendor, t.account_number, t.date, t.processed_date, t.transaction_type,
           vc.nickname as bank_nickname,
           vc.bank_account_number as bank_account_display
         FROM transactions t

@@ -3,6 +3,9 @@
  */
 export interface DetectionTransaction {
     name: string;
+    name_original?: string | null;
+    name_en?: string | null;
+    name_ru?: string | null;
     price: number;
     category: string | null;
     vendor?: string;
@@ -19,6 +22,9 @@ export interface DetectionTransaction {
  */
 export interface DetectedRecurringPayment {
     name: string;
+    name_original?: string | null;
+    name_en?: string | null;
+    name_ru?: string | null;
     category: string | null;
     vendor?: string;
     account_number: string | null;
@@ -113,6 +119,9 @@ export function detectRecurringPayments(transactions: DetectionTransaction[]): D
 
                 recurringPayments.push({
                     name: lastItem.name,
+                    name_original: lastItem.name_original,
+                    name_en: lastItem.name_en,
+                    name_ru: lastItem.name_ru,
                     category: lastItem.category,
                     vendor: lastItem.vendor,
                     account_number: lastItem.account_number,
@@ -155,6 +164,9 @@ export function detectRecurringPayments(transactions: DetectionTransaction[]): D
 
                 recurringPayments.push({
                     name: lastItem.name,
+                    name_original: lastItem.name_original,
+                    name_en: lastItem.name_en,
+                    name_ru: lastItem.name_ru,
                     category: lastItem.category,
                     vendor: lastItem.vendor,
                     account_number: lastItem.account_number,

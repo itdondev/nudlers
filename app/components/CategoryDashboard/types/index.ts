@@ -6,6 +6,9 @@ export interface ResponseData {
 
 export interface Expense {
   name: string;
+  name_original?: string | null;
+  name_en?: string | null;
+  name_ru?: string | null;
   price: number;
   date: string;
   category: string;

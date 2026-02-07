@@ -28,9 +28,13 @@ import CategoryAutocomplete from './CategoryAutocomplete';
 import AccountDisplay from './AccountDisplay';
 import Table, { Column } from './Table';
 import PageHeader from './PageHeader';
+import { useLanguage } from '../context/LanguageContext';
 
 interface Installment {
     name: string;
+    name_original?: string | null;
+    name_en?: string | null;
+    name_ru?: string | null;
     price: number;
     original_amount: number | null;
     original_currency: string | null;
@@ -51,6 +55,9 @@ interface Installment {
 
 interface RecurringTransaction {
     name: string;
+    name_original?: string | null;
+    name_en?: string | null;
+    name_ru?: string | null;
     price: number;
     category: string | null;
     vendor: string;
@@ -92,6 +99,7 @@ const formatDate = (dateStr: string): string => {
 };
 
 const RecurringPaymentsView: React.FC = () => {
+    const { getTranslatedName } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [installments, setInstallments] = useState<Installment[]>([]);
     const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
@@ -492,7 +500,7 @@ const RecurringPaymentsView: React.FC = () => {
                                         stickyHeader
                                         maxHeight="none"
                                         columns={[
-                                            { id: 'name', label: 'Description', sortable: true, format: (val) => <span style={{ fontWeight: 600 }}>{val}</span> },
+                                            { id: 'name', label: 'Description', sortable: true, format: (_, row) => <span style={{ fontWeight: 600 }}>{getTranslatedName(row)}</span> },
                                             { id: 'account', label: 'Account', format: (_, row) => renderAccountInfo(row) },
                                             {
                                                 id: 'category',
@@ -546,7 +554,7 @@ const RecurringPaymentsView: React.FC = () => {
                                             return (
                                                 <Box>
                                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                                        <Typography variant="subtitle2" fontWeight={700}>{row.name}</Typography>
+                                                        <Typography variant="subtitle2" fontWeight={700}>{getTranslatedName(row)}</Typography>
                                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: theme.palette.primary.main }}>
                                                             ₪{formatNumber(row.price)}
                                                         </Typography>
@@ -614,7 +622,7 @@ const RecurringPaymentsView: React.FC = () => {
                                         stickyHeader
                                         maxHeight="none"
                                         columns={[
-                                            { id: 'name', label: 'Description', format: (val) => <span style={{ fontWeight: 600 }}>{val}</span> },
+                                            { id: 'name', label: 'Description', format: (_, row) => <span style={{ fontWeight: 600 }}>{getTranslatedName(row)}</span> },
                                             { id: 'account', label: 'Account', format: (_, row) => renderAccountInfo(row) },
                                             {
                                                 id: 'category',
@@ -662,7 +670,7 @@ const RecurringPaymentsView: React.FC = () => {
                                             return (
                                                 <Box>
                                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                                        <Typography variant="subtitle2" fontWeight={700}>{row.name}</Typography>
+                                                        <Typography variant="subtitle2" fontWeight={700}>{getTranslatedName(row)}</Typography>
                                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: theme.palette.primary.main }}>
                                                             ₪{formatNumber(row.price)}
                                                         </Typography>
@@ -733,7 +741,7 @@ const RecurringPaymentsView: React.FC = () => {
                                         stickyHeader
                                         maxHeight="none"
                                         columns={[
-                                            { id: 'name', label: 'Name', format: (val) => <span style={{ fontWeight: 600 }}>{val}</span> },
+                                            { id: 'name', label: 'Name', format: (_, row) => <span style={{ fontWeight: 600 }}>{getTranslatedName(row)}</span> },
                                             {
                                                 id: 'account_number',
                                                 label: 'Account',
@@ -760,7 +768,7 @@ const RecurringPaymentsView: React.FC = () => {
                                         mobileCardRenderer={(row) => (
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Box>
-                                                    <Typography variant="subtitle2" fontWeight={700}>{row.name}</Typography>
+                                                    <Typography variant="subtitle2" fontWeight={700}>{getTranslatedName(row)}</Typography>
                                                     <Box sx={{ mt: 0.5 }}>
                                                         {renderAccountInfo(row as any)}
                                                     </Box>
