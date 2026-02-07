@@ -30,7 +30,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
           setLanguageState(data.language || 'he');
         }
       } catch (error) {
-        logger.error({ error }, 'Failed to load language preference');
+        logger.error('Failed to load language preference', error);
       } finally {
         setIsLoading(false);
       }
@@ -56,9 +56,9 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       }
 
       setLanguageState(lang);
-      logger.info({ language: lang }, 'Language preference updated');
+      logger.info('Language preference updated', { language: lang });
     } catch (error) {
-      logger.error({ error, language: lang }, 'Failed to set language');
+      logger.error('Failed to set language', error, { language: lang });
       throw error;
     } finally {
       setIsLoading(false);
