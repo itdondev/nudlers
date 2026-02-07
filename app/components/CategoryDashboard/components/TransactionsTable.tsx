@@ -20,9 +20,9 @@ import { useLanguage } from '../../../context/LanguageContext';
 
 export interface Transaction {
   name: string;
-  name_en?: string;
-  name_ru?: string;
-  name_original?: string;
+  name_en?: string | null;
+  name_ru?: string | null;
+  name_original?: string | null;
   price: number;
   date: string;
   category: string;
